@@ -53,8 +53,8 @@ static uint32_t FRAME_2_ADDRESS = 0;
 #define many_plots many_circles * 2 * 32
 //======================================
 
-#define screen_X 800
-#define screen_Y 1280
+#define screen_X 1024
+#define screen_Y 600
 #define zooming ((uint16_t)0x3000)
 #define frames_count 500
 
@@ -125,10 +125,10 @@ static void zoom_manage(void)
     //====================================================================
     if (frames > frames_count)
     {
-        if ((zoom_scale < 0xC000) && (zoom_side != 0))
+        if ((zoom_scale < 0x9000) && (zoom_side != 0))
         {
             zoom_scale += 0x0180;
-            if (zoom_scale >= 0xC000)
+            if (zoom_scale >= 0x9000)
             {
                 zoom_side = 0;
             }
@@ -154,7 +154,7 @@ void start_vectordots_ball(void)
 {
     // xSemaphoreTake(fb_mutex, portMAX_DELAY);
     FRAME_ADDRESS = (uint32_t)fbs[0];
-    void *buf2_ptr = heap_caps_aligned_alloc(64, 800 * 1280 * 2, MALLOC_CAP_SPIRAM);
+    void *buf2_ptr = heap_caps_aligned_alloc(64, 1024 * 600 * 2, MALLOC_CAP_SPIRAM);
     FRAME_2_ADDRESS = (uint32_t)buf2_ptr;
 
     if (multable == nullptr)
@@ -178,7 +178,7 @@ void start_vectordots_ball(void)
     global_is_touched = false;
 
     // clear both framebuffers
-    for (i = 0; i < (800 * 1280 / 2); i++)
+    for (i = 0; i < (1024 * 600 / 2); i++)
     {
         pFBaddr[i] = 0;
         pFBaddr2[i] = 0;
@@ -212,7 +212,7 @@ void start_vectordots_ball(void)
 
         if (global_is_touched == true)
         {
-            for (i = 0; i < (800 * 1280 / 2); i++)
+            for (i = 0; i < (1024 * 600 / 2); i++)
             {
                 pFBaddr[i] = 0; // fill SDRAM layer buffors as black color
             }
@@ -224,10 +224,9 @@ void start_vectordots_ball(void)
             refresh_menu_self();
             return;
         }
-        // esp_cache_msync((void *)FRAME_2_ADDRESS, 800 * 1280 * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        // esp_cache_msync((void *)FRAME_2_ADDRESS, 1024 * 600 * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         xSemaphoreTake(vsync_sem, portMAX_DELAY);
-        lcd.lcd_draw_bitmap(0, 0, 800, 1280, (uint8_t *)FRAME_2_ADDRESS);
-
+        lcd.lcd_draw_bitmap(0, 0, 1024, 600, (uint8_t *)FRAME_2_ADDRESS);
         //---
         zoom_manage();
         //---
@@ -249,9 +248,9 @@ void start_vectordots_ball(void)
             *(uint16_t *)(plots01[i]) = 0xFFFF;
             esp_cache_msync((void *)(plots01[i] & ~63U), 64, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         }
-        // esp_cache_msync((void *)FRAME_ADDRESS, 800 * 1280 * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        // esp_cache_msync((void *)FRAME_ADDRESS, 1024 * 600 * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         xSemaphoreTake(vsync_sem, portMAX_DELAY);
-        lcd.lcd_draw_bitmap(0, 0, 800, 1280, (uint8_t *)FRAME_ADDRESS);
+        lcd.lcd_draw_bitmap(0, 0, 1024, 600, (uint8_t *)FRAME_ADDRESS);
     }
 }
 //=======================================================================

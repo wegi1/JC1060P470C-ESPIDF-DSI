@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #define LCD_H_RES 1024
-#define LCD_V_RES 60
+#define LCD_V_RES 600
 
 #define LCD_RST 0
 #define LCD_LED 23

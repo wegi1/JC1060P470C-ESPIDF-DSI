@@ -29,6 +29,7 @@
 #include "RTC.hpp"
 #include "driver/i2c.h" // Potrzebne do konfiguracji magistrali
 #include "wifi_ntp.hpp" // Potrzebne do synchronizacji NTP
+#include "vectordotsball.hpp"
 //============================================================================================================
 //============================================================================================================
 //============================================================================================================
@@ -120,6 +121,33 @@ void sync_internal_rtc_with_rx8025t(void)
 //============================================================================================================
 //============================================================================================================
 //============================================================================================================
+void test(void)
+{
+    safe_clear_screen(fbs[0], 0x0000);
+
+    draw_rectangle(fbs[0], LCD_H_RES, LCD_V_RES, 50, 50, 924, 500, 0x001F);
+
+    draw_line(fbs[0], LCD_H_RES, LCD_V_RES, 512, 60, 540, 0xFFE0);
+
+    draw_clock_perfect_monospace(fbs[0], LCD_H_RES, LCD_V_RES,
+                                 digital_7_ttf, "0",
+                                 100, 150, 90.0f, 0xFFFF);
+
+    draw_text(fbs[0], LCD_H_RES, LCD_V_RES,
+              "TEST 1024x600 OK", 100, 380, 30.0f, 0x07E0);
+
+    esp_err_t ret = esp_cache_msync((void *)fbs[0],
+                                    LCD_H_RES * LCD_V_RES * sizeof(uint16_t),
+                                    ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    printf("[TEST] msync ret = %d\n", ret);
+
+    lcd.lcd_draw_bitmap(0, 0, LCD_H_RES, LCD_V_RES, (uint8_t *)fbs[0]);
+    vTaskDelay(pdMS_TO_TICKS(50));
+    while (1)
+    {
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+}
 
 //============================================================================================================
 //============================================================================================================
@@ -150,8 +178,9 @@ extern "C" void app_main(void)
 
     // Rejestracja callbacku przerwaniowego VSYNC (on_color_trans_done dla ESP-IDF 5.5.3)
     // NOWA, IDEALNIE CZYSTA WERSJA (kompilator to pokocha):
-    esp_lcd_dpi_panel_event_callbacks_t cbs = {};   // Wyzerowanie wszystkich pól struktury
-    cbs.on_color_trans_done = on_frame_complete_cb; // Przypisanie naszego przerwaniowego callbacku
+    esp_lcd_dpi_panel_event_callbacks_t cbs = {}; // Wyzerowanie wszystkich pól struktury
+    // cbs.on_color_trans_done = on_frame_complete_cb; // Przypisanie naszego przerwaniowego callbacku
+    cbs.on_refresh_done = on_frame_complete_cb;
 
     esp_lcd_dpi_panel_register_event_callbacks(dpi_handle, &cbs, NULL);
 
@@ -178,9 +207,10 @@ extern "C" void app_main(void)
         printf("[CRITICAL ERROR] Stopujemy system, brak pamieci dla renderera!\n");
         return;
     }
+    // test();
 
     // JAWNE CZYSZCZENIE BUFORÓW NA CZARNO ZARAZ PO ALOKACJI (BEZPIECZNY START)
-    safe_clear_screen(fbs[0], 0x0000);
+    // safe_clear_screen(fbs[0], 0x0000);
 
     // Koniecznie synchronizujemy cache dla obu, żeby PSRAM przyjął czarne piksele
     esp_cache_msync((void *)fbs[0], buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
@@ -197,12 +227,13 @@ extern "C" void app_main(void)
     printf("[LOG] Dotyk gsl3680 pomyślnie wystartował bez konfliktów magistrali!\n");
     //============================================================================================================
     // rx8025t_init();
-    sync_internal_rtc_with_rx8025t(); // <<< WYWOŁUJEMY RAZ PO RESECIE
+    // sync_internal_rtc_with_rx8025t(); // <<< WYWOŁUJEMY RAZ PO RESECIE
 
     print_internal_ram_stats("PRZED INICJALIZACJĄ ZADAŃ RTC [init_RTC_subsystem();]");
     //============================================================================================================
     // init_RTC_subsystem();
-    lcd.fillScreen(0xF800) ;
+    // lcd.fillScreen(0xF800);
+    start_vectordots_ball();
     // Pętla główna Double Bufferingu
     while (1)
     {
@@ -210,3 +241,17 @@ extern "C" void app_main(void)
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
+//===================================================================================================
+//===================================================================================================
+//===================================================================================================
+void NOTHING_TO_DO(void)
+{
+    // NOTHING_TO_DO
+}
+//===================================================================================================
+//===================================================================================================
+//===================================================================================================
+
+//===================================================================================================
+//===================================================================================================
+//===================================================================================================
