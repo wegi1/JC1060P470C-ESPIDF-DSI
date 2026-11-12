@@ -11,7 +11,6 @@
 
 #include "pins_config.h"
 #include "jd9165_lcd.h"
-#include "driver/i2c.h"
 
 // 1. Dołączamy Twoje tablice z czcionkami bezpośrednio z folderu fonts
 #include "fonty.h"
@@ -27,7 +26,7 @@
 #include "esp_cache.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "RTC.hpp"
-#include "driver/i2c.h" // Potrzebne do konfiguracji magistrali
+
 #include "wifi_ntp.hpp" // Potrzebne do synchronizacji NTP
 #include "vectordotsball.hpp"
 //============================================================================================================
@@ -37,7 +36,7 @@
 // Wymuszenie dla kompilatora C++, aby traktował plik producenta jako kod C++ / C kompatybilny
 extern "C"
 {
-#include "gsl3680_touch.h"
+#include "gt911_touch.h"
 #include "rx8025t.h"
 }
 extern "C"
@@ -59,7 +58,7 @@ extern volatile uint8_t BRIGHTNESS;
 jd9165_lcd lcd(LCD_RST);
 
 // TUTAJ PRZENOSIMY OBIEKT JAKO GLOBALNY, ŻEBY RTC.CPP GO WIDZIAŁ:
-gsl3680_touch touch(TP_I2C_SDA, TP_I2C_SCL, TP_RST, TP_INT);
+gt911_touch touch(TP_I2C_SDA, TP_I2C_SCL, TP_RST, TP_INT);
 
 // DWA SPRZĘTOWE BUFORY DLA BEZKOPIOŁOWEGO PAGE FLIPPINGU
 uint16_t *fbs[1] = {NULL};
@@ -223,8 +222,8 @@ extern "C" void app_main(void)
     printf("[LOG] STABILNA PĘTLA GRAFICZNA URUCHOMIONA!\n");
 
     // 3. Odpalenie dotyku – teraz przejdzie bez błędu i wybudzi układ!
-    // touch.begin();
-    printf("[LOG] Dotyk gsl3680 pomyślnie wystartował bez konfliktów magistrali!\n");
+    touch.begin();
+    printf("[LOG] Dotyk GT911 pomyślnie wystartował bez konfliktów magistrali!\n");
     //============================================================================================================
     // rx8025t_init();
     // sync_internal_rtc_with_rx8025t(); // <<< WYWOŁUJEMY RAZ PO RESECIE
@@ -233,13 +232,24 @@ extern "C" void app_main(void)
     //============================================================================================================
     // init_RTC_subsystem();
     // lcd.fillScreen(0xF800);
-    start_vectordots_ball();
-    // Pętla główna Double Bufferingu
+    // start_vectordots_ball();
+
     while (1)
     {
-        // print_RTC();
-        vTaskDelay(pdMS_TO_TICKS(100));
+        uint16_t tx = 0, ty = 0;
+        if (touch.getTouch(&tx, &ty))
+        {
+            printf("[TOUCH GT911] X = %u, Y = %u\n", tx, ty);
+        }
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
+
+    // Pętla główna Double Bufferingu
+    // while (1)
+    // {
+    //     // print_RTC();
+    //     vTaskDelay(pdMS_TO_TICKS(100));
+    // }
 }
 //===================================================================================================
 //===================================================================================================

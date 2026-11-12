@@ -22,7 +22,7 @@
 #include "renderer.hpp"
 #include "fonty.h"
 #include "jd9165_lcd.h"
-#include "gsl3680_touch.h"
+#include "gt911_touch.h"
 #include "pins_config.h"
 #include "rx8025t.h"
 #include "wifi_ntp.hpp" // Potrzebne do synchronizacji NTP
@@ -42,7 +42,7 @@
 extern jd9165_lcd lcd;
 
 // ZAMYKAMY DEKLARACJĘ DOTYKU W BLOKU ZGODNOŚCI "C":
-extern gsl3680_touch touch;
+extern gt911_touch touch;
 
 extern uint16_t *fbs[1]; // Bufory ramki (framebuffer) dla wyświetlacza
 

@@ -7,12 +7,12 @@ extern "C"
 {
 #endif
 
-#include "driver/i2c.h"
+#include "driver/i2c_master.h"
 #include "pins_config.h"
 
 // ADRESACJA I PORT MAGISTRALI I2C
 #define RX8025T_ADDR 0x32
-#define RX8025T_I2C_PORT I2C_NUM_0 // WSPÓLNY PORT Z DOTYKIEM GSL3680
+#define RX8025T_I2C_PORT I2C_NUM_0 // WSPÓLNY PORT Z DOTYKIEM GT911
 
 // ADRESY REJESTRÓW RTC
 #define RX8025T_REG_SEC 0x00

@@ -37,21 +37,30 @@ void gt911_touch::begin()
     // };
     // i2c_conf.master.clk_speed = 400000; // 400kHz
 
-
-    // ESP_ERROR_CHECK(i2c_param_config(I2C_NUM_0, &i2c_conf));
-    // ESP_ERROR_CHECK(i2c_driver_install(I2C_NUM_0, i2c_conf.mode, 0, 0, 0));
     i2c_master_bus_handle_t i2c_handle = NULL;
-    i2c_master_get_bus_handle(1,&i2c_handle);
+
+    if (i2c_master_get_bus_handle(I2C_NUM_0, &i2c_handle) != ESP_OK)
+    {
+        i2c_master_bus_config_t bus_cfg = {};
+        bus_cfg.clk_source = I2C_CLK_SRC_DEFAULT;
+        bus_cfg.i2c_port = I2C_NUM_0;
+        bus_cfg.scl_io_num = (gpio_num_t)_scl;
+        bus_cfg.sda_io_num = (gpio_num_t)_sda;
+        bus_cfg.glitch_ignore_cnt = 7;
+        bus_cfg.flags.enable_internal_pullup = true;
+        ESP_ERROR_CHECK(i2c_new_master_bus(&bus_cfg, &i2c_handle));
+    }
 
     esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
-    tp_io_config.scl_speed_hz = 100000;
+    tp_io_config.scl_speed_hz = 400000;
+
     ESP_LOGI(TAG, "Initialize touch IO (I2C)");
     esp_lcd_new_panel_io_i2c(i2c_handle, &tp_io_config, &tp_io_handle);
 
     esp_lcd_touch_config_t tp_cfg = {
         .x_max = CONFIG_LCD_HRES,
         .y_max = CONFIG_LCD_VRES,
-        .rst_gpio_num = (gpio_num_t)_rst,
+        .rst_gpio_num = GPIO_NUM_NC,
         .int_gpio_num = (gpio_num_t)_int,
         .levels = {
             .reset = 0,
@@ -63,6 +72,18 @@ void gt911_touch::begin()
             .mirror_y = 0,
         },
     };
+    // Sprzetowa sekwencja wyboru adresu 0x5D dla GT911 (INT=0 przy narastajacym RST)
+    gpio_reset_pin((gpio_num_t)_rst);
+    gpio_reset_pin((gpio_num_t)_int);
+    gpio_set_direction((gpio_num_t)_rst, GPIO_MODE_OUTPUT);
+    gpio_set_direction((gpio_num_t)_int, GPIO_MODE_OUTPUT);
+
+    gpio_set_level((gpio_num_t)_int, 0);
+    gpio_set_level((gpio_num_t)_rst, 0);
+    vTaskDelay(pdMS_TO_TICKS(20));
+    gpio_set_level((gpio_num_t)_rst, 1);
+    vTaskDelay(pdMS_TO_TICKS(60));
+    gpio_set_direction((gpio_num_t)_int, GPIO_MODE_INPUT);
 
     ESP_LOGI(TAG, "Initialize touch controller gt911");
     ESP_ERROR_CHECK(esp_lcd_touch_new_i2c_gt911(tp_io_handle, &tp_cfg, &tp));
@@ -76,10 +97,12 @@ bool gt911_touch::getTouch(uint16_t *x, uint16_t *y)
     return touchpad_pressed;
 }
 
-void gt911_touch::set_rotation(uint8_t r){
-switch(r){
+void gt911_touch::set_rotation(uint8_t r)
+{
+    switch (r)
+    {
     case 0:
-        esp_lcd_touch_set_swap_xy(tp, false);   
+        esp_lcd_touch_set_swap_xy(tp, false);
         esp_lcd_touch_set_mirror_x(tp, false);
         esp_lcd_touch_set_mirror_y(tp, false);
         break;
@@ -89,15 +112,14 @@ switch(r){
         esp_lcd_touch_set_mirror_y(tp, true);
         break;
     case 2:
-        esp_lcd_touch_set_swap_xy(tp, false);   
+        esp_lcd_touch_set_swap_xy(tp, false);
         esp_lcd_touch_set_mirror_x(tp, false);
         esp_lcd_touch_set_mirror_y(tp, false);
         break;
     case 3:
-        esp_lcd_touch_set_swap_xy(tp, false);   
+        esp_lcd_touch_set_swap_xy(tp, false);
         esp_lcd_touch_set_mirror_x(tp, true);
         esp_lcd_touch_set_mirror_y(tp, true);
         break;
     }
-
 }
