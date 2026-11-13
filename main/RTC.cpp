@@ -1683,7 +1683,7 @@ void set_ntp_menu(void)
                     printf("[MENU NTP] -> Ręczne wywołanie synchronizacji czasu...\n");
 
                     // Czyścimy przestrzeń pomiędzy przyciskami (Y=450 do 580) na czarno pod status
-                    draw_rectangle(back_buffer, LCD_H_RES, LCD_V_RES, 100, 330, 800, 112, 0x0000);
+                    draw_rectangle(back_buffer, LCD_H_RES, LCD_V_RES, 0, 330, 1024, 112, 0x0000);
                     draw_text(back_buffer, LCD_H_RES, LCD_V_RES, "SYNCHRONIZACJA...", 288, 350, 56.0f, 0xF800); // Czerwony napis
 
                     // Wypychamy status na ekran przed uruchomieniem workera
@@ -1701,11 +1701,30 @@ void set_ntp_menu(void)
 
                     if (ntp_read == true)
                     {
-                        draw_rectangle(back_buffer, LCD_H_RES, LCD_V_RES, 100, 330, 800, 112, 0x0000);
-                        draw_text(back_buffer, LCD_H_RES, LCD_V_RES, "ZAKONCZONO SUKCESEM!", 240, 350, 56.0f, 0x07E0); // Zielony napis
+                        time_t now = 0;
+                        struct tm timeinfo = {};
+                        time(&now);
+                        localtime_r(&now, &timeinfo);
+                        rx8025t_time_t rtc_time;
+                        rtc_time.second = timeinfo.tm_sec;
+                        rtc_time.minute = timeinfo.tm_min;
+                        rtc_time.hour = timeinfo.tm_hour;
+                        rtc_time.day = timeinfo.tm_mday;
+                        rtc_time.month = timeinfo.tm_mon + 1;
+                        rtc_time.year = timeinfo.tm_year + 1900;
+                        rtc_time.weekday = timeinfo.tm_wday;
+
+                        char buf[64]; // Bufor na gotowy tekst (64 bajty w zupełności wystarczą)
+
+                        snprintf(buf, sizeof(buf), "SUKCES NTP! %04d-%02d-%02d %02d:%02d:%02d",
+                                 rtc_time.year, rtc_time.month, rtc_time.day,
+                                 rtc_time.hour, rtc_time.minute, rtc_time.second);
+                        draw_rectangle(back_buffer, LCD_H_RES, LCD_V_RES, 0, 330, 1024, 112, 0x0000);
+                        draw_text(back_buffer, LCD_H_RES, LCD_V_RES, &buf[0], 15, 350, 66.0f, 0x07E0); // Zielony napis
                     }
                     else
                     {
+                        draw_rectangle(back_buffer, LCD_H_RES, LCD_V_RES, 0, 330, 1024, 112, 0x0000);
                         draw_rectangle(back_buffer, LCD_H_RES, LCD_V_RES, 100, 330, 800, 112, 0xF100);
                         draw_text(back_buffer, LCD_H_RES, LCD_V_RES, "NIEPOWODZENIE--NTP !", 240, 350, 56.0f, 0xFFFF);
                     }
