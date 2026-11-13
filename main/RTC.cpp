@@ -721,7 +721,7 @@ void vTaskMenuEngine(void *pvParameters)
         lcd.lcd_draw_bitmap(0, 0, LCD_H_RES, LCD_V_RES, (uint8_t *)fbs[0]);
 
         // 4. Dajemy czas na fizyczne przemiecenie kontrolera i zdejmujemy blokadę czasu
-        vTaskDelay(pdMS_TO_TICKS(4));
+        vTaskDelay(pdMS_TO_TICKS(30));
         old_seconds = 111;
         is_editing_time = false;
 
@@ -1634,6 +1634,9 @@ void set_ntp_menu(void)
     wait_for_release();            // Czekamy na puszczenie ekranu przed wejściem do menu, aby uniknąć natychmiastowego wyzwolenia przycisku
     vTaskDelay(pdMS_TO_TICKS(50)); // Dajemy czas na fizyczne przemieszczenie kontrolera i zdejmujemy blokadę czasu
 
+    //  WAIT FOR DMA
+    xSemaphoreTake(vsync_sem, 0);
+    xSemaphoreTake(vsync_sem, portMAX_DELAY);
     // Czyszczenie i przygotowanie czystego bufora ekranu
     xSemaphoreTake(fb_mutex, portMAX_DELAY);
     memset(fbs[0], 0x00, 1024 * 600 * 2); // Czyszczenie na czarno (RGB565)
@@ -1813,6 +1816,7 @@ void set_ntp_and_demo_menu(void)
             if (tx >= 56 && tx <= 456 && ty >= 105 && ty <= 195)
             {
                 set_ntp_menu();
+                vTaskDelay(pdMS_TO_TICKS(30));
                 vTaskResume(hTaskHardwareTouchDriver);
                 vTaskDelay(pdMS_TO_TICKS(150));
                 refresh_menu_self(); // Czyste wywołanie odświeżenia
@@ -1822,13 +1826,16 @@ void set_ntp_and_demo_menu(void)
             if (tx >= 568 && tx <= 968 && ty >= 105 && ty <= 195)
             {
                 printf("[MENU NTP] -> Uruchamiam Vector Dots Demo...\n");
+                vTaskDelay(pdMS_TO_TICKS(30));
                 run_vector_dots_demo_loop();
+                vTaskDelay(pdMS_TO_TICKS(30));
             }
             // Obsluga przycisku DONE (wyjscie na dolnym pasku)
             if (tx >= 312 && tx <= 712 && ty >= 450 && ty <= 540)
             {
                 printf("[MENU NTP] -> Kliknieto DONE. Powrot.\n");
                 exit_menu = true;
+                vTaskDelay(pdMS_TO_TICKS(30));
             }
         }
         vTaskDelay(pdMS_TO_TICKS(15));
@@ -1840,6 +1847,69 @@ void set_ntp_and_demo_menu(void)
     vTaskDelay(pdMS_TO_TICKS(150));
     old_seconds = 111;
 }
+//==**--
+// void set_ntp_and_demo_menu(void)
+// {
+//     uint16_t *menu_buffer = (uint16_t *)fbs[0];
+//     uint16_t old_tx = 9999, old_ty = 9999;
+//     bool exit_menu = false;
+//     refresh_menu_self();
+//     if (hTaskHardwareTouchDriver != NULL)
+//         vTaskResume(hTaskHardwareTouchDriver);
+//     while (!exit_menu)
+//     {
+//         uint16_t tx = global_touchX, ty = global_touchY;
+//         if (global_is_touched && tx >= 56 && tx <= 456 && ty >= 105 && ty <= 195)
+//         {
+//             vTaskDelay(pdMS_TO_TICKS(25));
+//             set_ntp_menu();
+//             vTaskDelay(pdMS_TO_TICKS(30));
+//             vTaskResume(hTaskHardwareTouchDriver);
+//             vTaskDelay(pdMS_TO_TICKS(150));
+//             refresh_menu_self();
+//             old_tx = 9999;
+//             old_ty = 9999;
+//             continue;
+//         }
+//         if (global_is_touched && tx >= 568 && tx <= 968 && ty >= 105 && ty <= 195)
+//         {
+//             vTaskDelay(pdMS_TO_TICKS(25));
+//             run_vector_dots_demo_loop();
+//             vTaskResume(hTaskHardwareTouchDriver);
+//             vTaskDelay(pdMS_TO_TICKS(150));
+//             refresh_menu_self();
+//             old_tx = 9999;
+//             old_ty = 9999;
+//             continue;
+//         }
+//         if (global_is_touched && tx >= 312 && tx <= 712 && ty >= 450 && ty <= 540)
+//         {
+//             exit_menu = true;
+//             vTaskDelay(pdMS_TO_TICKS(25));
+//             continue;
+//         }
+//         if (global_is_touched && (tx != old_tx || ty != old_ty))
+//         {
+//             old_tx = tx;
+//             old_ty = ty;
+//             xSemaphoreTake(fb_mutex, portMAX_DELAY);
+//             draw_rectangle(menu_buffer, LCD_H_RES, LCD_V_RES, 7, 7, 300, 35, 0x0000);
+//             show_debug_touch(tx, ty);
+//             xSemaphoreGive(fb_mutex);
+//             esp_cache_msync(fbs[0], 1024 * 600 * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+//             xSemaphoreTake(vsync_sem, portMAX_DELAY);
+//             lcd.lcd_draw_bitmap(0, 0, LCD_H_RES, LCD_V_RES, (uint8_t *)fbs[0]);
+//             vTaskDelay(pdMS_TO_TICKS(25));
+//         }
+//         vTaskDelay(pdMS_TO_TICKS(15));
+//     }
+//     vTaskSuspend(hTaskHardwareTouchDriver);
+//     wait_for_release();
+//     vTaskDelay(pdMS_TO_TICKS(150));
+//     old_seconds = 111;
+// }
+
+//==**--
 //=====================================================================================================
 //=====================================================================================================
 //=====================================================================================================
@@ -1849,6 +1919,7 @@ void run_vector_dots_demo_loop(void)
     wait_for_release();
     vTaskDelay(pdMS_TO_TICKS(200));
     start_vectordots_ball();
+    vTaskDelay(pdMS_TO_TICKS(50));
 }
 //=====================================================================================================
 //=====================================================================================================

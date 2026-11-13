@@ -188,6 +188,10 @@ void start_vectordots_ball(void)
     plots01[0] = FRAME_ADDRESS;
     insert_dots();
 
+    // SYNCHRONIZACJA Z DMA
+    xSemaphoreTake(vsync_sem, 0);
+    xSemaphoreTake(vsync_sem, portMAX_DELAY);
+
     while (1)
     {
         //---
