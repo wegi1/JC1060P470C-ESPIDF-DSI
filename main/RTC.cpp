@@ -1684,7 +1684,7 @@ void set_ntp_menu(void)
 
                     // Czyścimy przestrzeń pomiędzy przyciskami (Y=450 do 580) na czarno pod status
                     draw_rectangle(back_buffer, LCD_H_RES, LCD_V_RES, 0, 330, 1024, 112, 0x0000);
-                    draw_text(back_buffer, LCD_H_RES, LCD_V_RES, "SYNCHRONIZACJA...", 288, 350, 56.0f, 0xF800); // Czerwony napis
+                    draw_text(back_buffer, LCD_H_RES, LCD_V_RES, "SYNCHRONIZACJA...", 288, 350, 56.0f, 0xFFE0); // Yellow
 
                     // Wypychamy status na ekran przed uruchomieniem workera
                     esp_cache_msync(fbs[0], 1024 * 600 * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
@@ -1720,7 +1720,7 @@ void set_ntp_menu(void)
                                  rtc_time.year, rtc_time.month, rtc_time.day,
                                  rtc_time.hour, rtc_time.minute, rtc_time.second);
                         draw_rectangle(back_buffer, LCD_H_RES, LCD_V_RES, 0, 330, 1024, 112, 0x0000);
-                        draw_text(back_buffer, LCD_H_RES, LCD_V_RES, &buf[0], 15, 350, 66.0f, 0x07E0); // Zielony napis
+                        draw_text(back_buffer, LCD_H_RES, LCD_V_RES, &buf[0], 25, 350, 66.0f, 0x07E0); // Zielony napis
                     }
                     else
                     {
