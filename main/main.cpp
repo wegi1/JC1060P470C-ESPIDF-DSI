@@ -177,14 +177,14 @@ extern "C" void app_main(void)
 
     // Rejestracja callbacku przerwaniowego VSYNC (on_color_trans_done dla ESP-IDF 5.5.3)
     // NOWA, IDEALNIE CZYSTA WERSJA (kompilator to pokocha):
-    esp_lcd_dpi_panel_event_callbacks_t cbs = {};   // Wyzerowanie wszystkich pól struktury
-    cbs.on_color_trans_done = on_frame_complete_cb; // Przypisanie naszego przerwaniowego callbacku
-    // cbs.on_refresh_done = on_frame_complete_cb;
+    esp_lcd_dpi_panel_event_callbacks_t cbs = {}; // Wyzerowanie wszystkich pól struktury
+                                                  // cbs.on_color_trans_done = on_frame_complete_cb; // Przypisanie naszego przerwaniowego callbacku
+    cbs.on_refresh_done = on_frame_complete_cb;
 
     esp_lcd_dpi_panel_register_event_callbacks(dpi_handle, &cbs, NULL);
 
     // Alokacja dwóch buforów w PSRAM z wyrównaniem do linii Cache (64 bajty)
-    size_t buffer_size = LCD_H_RES * LCD_V_RES * 3; // + 1MB for jpeg decoding buffer
+    size_t buffer_size = (LCD_H_RES * LCD_V_RES) + (1024 * 1024); // + 1MB for jpeg decoding buffer
     fbs[0] = (uint16_t *)heap_caps_aligned_alloc(64, buffer_size, MALLOC_CAP_SPIRAM);
 
     printf("[MEM_2] Po alokacji fbs[0] (Twoje 2MB pobrane): %u KB wolnego\n", heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024);

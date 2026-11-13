@@ -1420,8 +1420,8 @@ void wyswietl_jpeg_ze_spiffs(const char *sciezka_pliku)
     long file_size = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    const size_t screen_bytes = LCD_H_RES * LCD_V_RES * 2;  // Pierwsze 2 MB: wyjscie RGB565
-    const size_t max_jpg_bytes = LCD_H_RES * LCD_V_RES * 1; // Trzeci 1 MB: bufor na plik .jpg
+    const size_t screen_bytes = LCD_H_RES * LCD_V_RES * 2; // Pierwsze 2 MB: wyjscie RGB565
+    const size_t max_jpg_bytes = 1024 * 1024;              // Poza buforem obrazu: bufor na plik .jpg
 
     if (file_size <= 0 || (size_t)file_size > max_jpg_bytes)
     {
