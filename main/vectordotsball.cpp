@@ -188,10 +188,6 @@ void start_vectordots_ball(void)
     plots01[0] = FRAME_ADDRESS;
     insert_dots();
 
-    // TUŻ PRZED while (1):
-    uint32_t fps_counter = 0;
-    int64_t t_start = esp_timer_get_time();
-
     while (1)
     {
         //---
@@ -257,15 +253,6 @@ void start_vectordots_ball(void)
         // esp_cache_msync((void *)FRAME_ADDRESS, 1024 * 600 * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         xSemaphoreTake(vsync_sem, portMAX_DELAY);
         lcd.lcd_draw_bitmap(0, 0, 1024, 600, (uint8_t *)FRAME_ADDRESS);
-        fps_counter += 2; // bo w jednym obiegu while rysujesz 2 klatki
-        if (fps_counter >= 120)
-        {
-            int64_t elapsed_us = esp_timer_get_time() - t_start;
-            float real_fps = (120.0f * 1000000.0f) / elapsed_us;
-            printf("[DEMO_BENCH] 120 ramek w %lld ms -> Realny FPS: %.2f\n", elapsed_us / 1000, real_fps);
-            fps_counter = 0;
-            t_start = esp_timer_get_time();
-        }
     }
 }
 //=======================================================================

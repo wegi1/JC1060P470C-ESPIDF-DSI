@@ -1,6 +1,7 @@
 # ESP32-P4 MIPI-DSI – Guition JC1060P470C_I_W_Y (7.0" 1024×600)
  
 # ---
+![Screenshot](/PICTURES/1.jpg) 
 ![Screenshot](/PICTURES/0.jpg) 
 ---
 🇬🇧 [English](#-english) | 🇵🇱 [Polski](#-polski)
