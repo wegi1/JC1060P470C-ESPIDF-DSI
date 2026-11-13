@@ -177,9 +177,9 @@ extern "C" void app_main(void)
 
     // Rejestracja callbacku przerwaniowego VSYNC (on_color_trans_done dla ESP-IDF 5.5.3)
     // NOWA, IDEALNIE CZYSTA WERSJA (kompilator to pokocha):
-    esp_lcd_dpi_panel_event_callbacks_t cbs = {}; // Wyzerowanie wszystkich pól struktury
-    // cbs.on_color_trans_done = on_frame_complete_cb; // Przypisanie naszego przerwaniowego callbacku
-    cbs.on_refresh_done = on_frame_complete_cb;
+    esp_lcd_dpi_panel_event_callbacks_t cbs = {};   // Wyzerowanie wszystkich pól struktury
+    cbs.on_color_trans_done = on_frame_complete_cb; // Przypisanie naszego przerwaniowego callbacku
+    // cbs.on_refresh_done = on_frame_complete_cb;
 
     esp_lcd_dpi_panel_register_event_callbacks(dpi_handle, &cbs, NULL);
 
@@ -209,7 +209,7 @@ extern "C" void app_main(void)
     // test();
 
     // JAWNE CZYSZCZENIE BUFORÓW NA CZARNO ZARAZ PO ALOKACJI (BEZPIECZNY START)
-    // safe_clear_screen(fbs[0], 0x0000);
+    safe_clear_screen(fbs[0], 0x0000);
 
     // Koniecznie synchronizujemy cache dla obu, żeby PSRAM przyjął czarne piksele
     esp_cache_msync((void *)fbs[0], buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
@@ -225,31 +225,21 @@ extern "C" void app_main(void)
     touch.begin();
     printf("[LOG] Dotyk GT911 pomyślnie wystartował bez konfliktów magistrali!\n");
     //============================================================================================================
-    // rx8025t_init();
-    // sync_internal_rtc_with_rx8025t(); // <<< WYWOŁUJEMY RAZ PO RESECIE
+    rx8025t_init();
+    sync_internal_rtc_with_rx8025t(); // <<< WYWOŁUJEMY RAZ PO RESECIE
 
     print_internal_ram_stats("PRZED INICJALIZACJĄ ZADAŃ RTC [init_RTC_subsystem();]");
     //============================================================================================================
-    // init_RTC_subsystem();
-    // lcd.fillScreen(0xF800);
+    init_RTC_subsystem();
+
     // start_vectordots_ball();
 
+    // Pętla główna Double Bufferingu
     while (1)
     {
-        uint16_t tx = 0, ty = 0;
-        if (touch.getTouch(&tx, &ty))
-        {
-            printf("[TOUCH GT911] X = %u, Y = %u\n", tx, ty);
-        }
-        vTaskDelay(pdMS_TO_TICKS(50));
+        print_RTC();
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
-
-    // Pętla główna Double Bufferingu
-    // while (1)
-    // {
-    //     // print_RTC();
-    //     vTaskDelay(pdMS_TO_TICKS(100));
-    // }
 }
 //===================================================================================================
 //===================================================================================================
