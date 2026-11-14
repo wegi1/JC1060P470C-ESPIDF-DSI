@@ -26,7 +26,7 @@
 #include "pins_config.h"
 #include "rx8025t.h"
 #include "wifi_ntp.hpp" // Potrzebne do synchronizacji NTP
-
+#include "wifi_portal.hpp"
 #include "vectordotsball.hpp"
 
 //=====================================================================================================
@@ -1768,21 +1768,24 @@ void refresh_menu_self(void)
     uint16_t *menu_buffer = (uint16_t *)fbs[0];
     xSemaphoreTake(fb_mutex, portMAX_DELAY);
     memset(fbs[0], 0x00, 1024 * 600 * 2);
-    // Linia pionowa dzielaca ekran na pol przy X=512
-    draw_rectangle(menu_buffer, LCD_H_RES, LCD_V_RES, 512, 0, 4, 300, 0xFFFF);
-    draw_hollow_rectangle(menu_buffer, LCD_H_RES, LCD_V_RES, 0, 0, 1020, 300, 4, 0xFFFF);
+    draw_rectangle(menu_buffer, LCD_H_RES, LCD_V_RES, 512, 0, 4, 600, 0xFFFF);
+    draw_hollow_rectangle(menu_buffer, LCD_H_RES, LCD_V_RES, 0, 0, 1020, 596, 4, 0xFFFF);
+    draw_rectangle(menu_buffer, LCD_H_RES, LCD_V_RES, 0, 298, 1020, 4, 0xFFFF);
     draw_hollow_rectangle(menu_buffer, LCD_H_RES, LCD_V_RES, 56, 105, 400, 90, 4, 0x07E0);
     draw_text(menu_buffer, LCD_H_RES, LCD_V_RES, "NTP", 216, 112, 80.0f, 0x07E0);
     draw_hollow_rectangle(menu_buffer, LCD_H_RES, LCD_V_RES, 568, 105, 400, 90, 4, 0xF100);
     draw_text(menu_buffer, LCD_H_RES, LCD_V_RES, "DEMO", 712, 112, 80.0f, 0xF100);
-    draw_hollow_rectangle(menu_buffer, LCD_H_RES, LCD_V_RES, 312, 450, 400, 90, 4, 0xFFFF);
-    draw_text(menu_buffer, LCD_H_RES, LCD_V_RES, "DONE", 400, 430, 120.0f, 0xFFFF);
+    draw_hollow_rectangle(menu_buffer, LCD_H_RES, LCD_V_RES, 56, 405, 400, 90, 4, 0x07FF);
+    draw_text(menu_buffer, LCD_H_RES, LCD_V_RES, "WiFi", 190, 412, 80.0f, 0x07FF);
+    draw_hollow_rectangle(menu_buffer, LCD_H_RES, LCD_V_RES, 568, 405, 400, 90, 4, 0xFFFF);
+    draw_text(menu_buffer, LCD_H_RES, LCD_V_RES, "DONE", 690, 412, 80.0f, 0xFFFF);
     esp_cache_msync(fbs[0], 1024 * 600 * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     xSemaphoreTake(vsync_sem, portMAX_DELAY);
     lcd.lcd_draw_bitmap(0, 0, LCD_H_RES, LCD_V_RES, (uint8_t *)fbs[0]);
     xSemaphoreGive(fb_mutex);
     wait_for_release();
 }
+
 void set_ntp_and_demo_menu(void)
 {
     uint16_t *menu_buffer = (uint16_t *)fbs[0];
@@ -1831,11 +1834,37 @@ void set_ntp_and_demo_menu(void)
                 vTaskDelay(pdMS_TO_TICKS(30));
             }
             // Obsluga przycisku DONE (wyjscie na dolnym pasku)
-            if (tx >= 312 && tx <= 712 && ty >= 450 && ty <= 540)
+            if (tx >= 568 && tx <= 968 && ty >= 405 && ty <= 495)
             {
                 printf("[MENU NTP] -> Kliknieto DONE. Powrot.\n");
                 exit_menu = true;
-                vTaskDelay(pdMS_TO_TICKS(30));
+            }
+            // Obsluga przycisku WiFi (wyjscie na dolnym pasku)
+            if (tx >= 56 && tx <= 456 && ty >= 405 && ty <= 495)
+            {
+                start_wifi_portal();
+                uint16_t *menu_buffer = (uint16_t *)fbs[0];
+                xSemaphoreTake(fb_mutex, portMAX_DELAY);
+                memset(fbs[0], 0x00, 1024 * 600 * 2);
+                draw_text(menu_buffer, LCD_H_RES, LCD_V_RES, "AP: ESP32-CLOCK-SETUP", 80, 110, 60.0f, 0x07FF);
+                draw_text(menu_buffer, LCD_H_RES, LCD_V_RES, "URL: http://192.168.4.1", 80, 200, 60.0f, 0x07E0);
+                draw_hollow_rectangle(menu_buffer, LCD_H_RES, LCD_V_RES, 568, 405, 400, 90, 4, 0xF100);
+                draw_text(menu_buffer, LCD_H_RES, LCD_V_RES, "CANCEL", 650, 412, 80.0f, 0xF100);
+                esp_cache_msync(fbs[0], 1024 * 600 * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+                xSemaphoreTake(vsync_sem, portMAX_DELAY);
+                lcd.lcd_draw_bitmap(0, 0, LCD_H_RES, LCD_V_RES, (uint8_t *)fbs[0]);
+                xSemaphoreGive(fb_mutex);
+                wait_for_release();
+                while (is_wifi_portal_active())
+                {
+                    if (global_is_touched && global_touchX >= 568 && global_touchX <= 968 && global_touchY >= 405 && global_touchY <= 495)
+                    {
+                        stop_wifi_portal();
+                        break;
+                    }
+                    vTaskDelay(pdMS_TO_TICKS(30));
+                }
+                refresh_menu_self();
             }
         }
         vTaskDelay(pdMS_TO_TICKS(15));
@@ -1847,6 +1876,7 @@ void set_ntp_and_demo_menu(void)
     vTaskDelay(pdMS_TO_TICKS(150));
     old_seconds = 111;
 }
+
 //==**--
 // void set_ntp_and_demo_menu(void)
 // {
